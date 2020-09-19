@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Mime;
 using System.Security.Cryptography;
 using OpenTK;
 using OpenTK.Graphics;
@@ -14,6 +15,9 @@ namespace RaycasterWithOpentk
     public class Game : MainRenderWindow
     {
         private int _xsize, _ysize;
+        private float _planeX;
+        private float _planeY;
+        
         
         private readonly int[] _gameBoard =
         {
@@ -48,6 +52,7 @@ namespace RaycasterWithOpentk
         private Boolean _firstMove = true;
         private Vector2 _lastPos;
         private float _bobAngle = 0.0f;
+        private Texture _floor = new Texture("Resources/greystone.png");
         
         public Game(int width, int height, string title)
             : base(width, height, title)
@@ -77,10 +82,9 @@ namespace RaycasterWithOpentk
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             Clear();
-            //RenderGameBoard(_gameBoard);
+            
+            RenderFloor(_player, _floor);
             RayCast(_player);
-            //RenderPlayer(_player);
-
             base.OnRenderFrame(e);
 
         }
@@ -156,6 +160,13 @@ namespace RaycasterWithOpentk
             
             
             base.OnUpdateFrame(e);
+        }
+
+        protected override void OnUnload(EventArgs e)
+        {
+            base.OnUnload(e);
+            GL.DeleteTexture(_floor.Handle);
+
         }
 
         private void UpdatePosWithCollisions(Vector2 tempPos, float pa)
@@ -234,42 +245,52 @@ namespace RaycasterWithOpentk
             int r;
             float ra, distT = 0f;
             Color4 col = new Color4(0f, 0f, 0f,1f);
-
+            Texture texture = new Texture("Resources/wall.png");
 
             int numRays = Width;
             List<float> angles = new List<float>();
             
             for( var x = 0; x <= Width; x++ ){
-
                 var xAng = (float)Math.Atan( ( x - Width / 2 ) / 500f );
                 xAng += player.LookAngle;
                 if (xAng > Math.PI * 2) { xAng -= (float) Math.PI * 2; }
                 if (xAng < 0) { xAng += (float) Math.PI * 2; }
-                
-                
                 angles.Add(xAng);
             }
 
-            float bobOffset = (float) Math.Sin(_bobAngle) * 10f;
+            float fov = angles[^1] - angles[0];
+            if (fov > Math.PI * 2) { fov -= (float) Math.PI * 2; }
+            if (fov < 0) { fov += (float) Math.PI * 2; }
+
+            float size = (float) Math.Tan(fov / 2) * 2;
             
+            player.Right.Normalize();
+            player.Right *= size;
+            _planeX = player.Right.X;
+            _planeY = player.Right.Y;
+            player.Right.Normalize();
+
+            float bobOffset = (float) Math.Sin(_bobAngle) * 10f;
             for (r = 0; r < numRays; r++)
             {
                 ra = angles[r];
                 
-                CastRay(player, ra, ref distT, ref col);
+                var tx = CastRay(player, ra, ref distT, ref col);
 
                 float ca = player.LookAngle - ra; if (ca > Math.PI * 2) { ca -= (float)Math.PI * 2; } if (ca < 0) { ca += (float)Math.PI * 2; }
+                
                 
                 
                 distT = distT * (float)Math.Cos(ca);
                 float lineH = ((Height / _ysize) * Height) / distT;
                 float lineO = (Height - lineH) / 2;
-                drawLine(r, lineO + bobOffset, r, lineH + lineO + bobOffset, col);
+                drawTexturedLine(r, lineO,tx,0, r, lineH + lineO,tx,1, texture, col);
             }
-
+            
+            GL.DeleteTexture(texture.Handle);
             
         }
-        private void CastRay(Player player, float ra, ref float distT, ref Color4 col)
+        private float CastRay(Player player, float ra, ref float distT, ref Color4 col)
         {
             int mx, my, mp;
             float rx, ry, xo, yo;
@@ -371,23 +392,77 @@ namespace RaycasterWithOpentk
                 dof += 1;
 
             }
-            
+
+            float tx;
             if(distV<=distH)
             {
                 rx = vx;
                 ry = vy;
                 distT = distV;
-                col = new Color4(1f, 0f, 0f, 1f);
+                col = new Color4(1f, 1f, 1f, 1f);
+                tx = (ry / (Height / _ysize)) - (float) Math.Floor(ry / (Height / _ysize));
+
             }
-            if(distH<distV)
+            else
             {
                 rx = hx;
                 ry = hy;
                 distT = distH;
-                col = new Color4(0.7f, 0f, 0f, 1f);
-
+                col = new Color4(0.5f, 0.5f, 0.5f, 1f);
+                tx = (rx / (Width / _xsize)) - (float) Math.Floor(rx / (Width / _xsize));
             }
+            
+            return tx; 
             //drawLine(player.Pos.X, player.Pos.Y, rx, ry, new Color4(0f, 0.3f, 0.7f, 0.5f));
+        }
+
+        private void RenderFloor(Player player, Texture texture)
+        {
+            float planeX = player.Right.X, planeY = player.Right.Y; //the 2d raycaster version of camera plane
+            float dirX = player.LookDir.X, dirY = player.LookDir.Y; //initial direction vector
+
+            for(int y = Height/2; y < Height; y++)
+            {
+              // rayDir for leftmost ray (x = 0) and rightmost ray (x = w)
+              float rayDirX0 = dirX + planeX;
+              float rayDirY0 = dirY + planeY;
+              float rayDirX1 = dirX - planeX;
+              float rayDirY1 = dirY - planeY;
+
+              // Current y position compared to the center of the screen (the horizon)
+              int p = y - Height / 2;
+
+              // Vertical position of the camera.
+              float posZ = 0.5f * Height;
+
+              // Horizontal distance from the camera to the floor for the current row.
+              // 0.5 is the z position exactly in the middle between floor and ceiling.
+              float rowDistance = posZ / p;
+
+              // calculate the real world step vector we have to add for each x (parallel to camera plane)
+              // adding step by step avoids multiplications with a weight in the inner loop
+              float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / Width;
+              float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / Height;
+
+              // real world coordinates of the leftmost column. This will be updated as we step to the right.
+              float floorX = (player.Pos.X / (Width / _xsize)) + rowDistance * rayDirX0;
+              float floorY = (player.Pos.Y / (Height / _ysize)) + rowDistance * rayDirY0;
+
+              
+              int cellX = (int)(floorX);
+              int cellY = (int)(floorY);
+
+              // get the texture coordinate from the fractional part
+              float tx1 = ((int) (64 * (floorX - cellX))) / 64f;
+              float ty1 = ((int) (64 * (floorY - cellY))) / 64f;
+              
+              float tx2 = ((int) (64 * ((floorX + (floorStepX * Width)) - cellX))) / 64f;
+              float ty2 = ((int) (64 * ((floorY + (floorStepY * Height)) - cellY))) / 64f;
+              
+              drawTexturedLine(0, y, tx1, ty1, Width, y, tx2, ty2, texture, new Color4(1f, 1f, 1f, 1f));
+              
+              
+            }
         }
     }
 }
