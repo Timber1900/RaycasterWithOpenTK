@@ -226,7 +226,7 @@ namespace RaycasterWithOpentk
         private void RayCast(Player player)
         {
             int r;
-            float ra, distT = 0f;
+            float distT = 0f;
             Color4 col = new Color4(0f, 0f, 0f,1f);
 
             int numRays = Width;
@@ -243,7 +243,7 @@ namespace RaycasterWithOpentk
             var bobOffset = (float) Math.Sin(_bobAngle) * 10f;
             for (r = 0; r < numRays; r++)
             {
-                ra = angles[r];
+                var ra = angles[r];
 
                 int textureHandle=1;
                 
