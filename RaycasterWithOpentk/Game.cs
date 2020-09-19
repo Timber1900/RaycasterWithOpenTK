@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Net.Mime;
-using System.Security.Cryptography;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.ES11;
@@ -17,27 +14,33 @@ namespace RaycasterWithOpentk
         private int _xsize, _ysize;
         private float _planeX;
         private float _planeY;
-        
-        
+
         private readonly int[] _gameBoard =
         {
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-
+            8,8,8,8,8,8,8,8,8,8,8,4,4,6,4,4,6,4,6,4,4,4,6,4,
+            8,0,0,0,0,0,0,0,0,0,8,4,0,0,0,0,0,0,0,0,0,0,0,4,
+            8,0,3,3,0,0,0,0,0,8,8,4,0,0,0,0,0,0,0,0,0,0,0,6,
+            8,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,
+            8,0,3,3,0,0,0,0,0,8,8,4,0,0,0,0,0,0,0,0,0,0,0,4,
+            8,0,0,0,0,0,0,0,0,0,8,4,0,0,0,0,0,6,6,6,0,6,4,6,
+            8,8,8,8,0,8,8,8,8,8,8,4,4,4,4,4,4,6,0,0,0,0,0,6,
+            7,7,7,7,0,7,7,7,7,0,8,0,8,0,8,0,8,4,0,4,0,6,0,6,
+            7,7,0,0,0,0,0,0,7,8,0,8,0,8,0,8,8,6,0,0,0,0,0,6,
+            7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,6,0,0,0,0,0,4,
+            7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,6,0,6,0,6,0,6,
+            7,7,0,0,0,0,0,0,7,8,0,8,0,8,0,8,8,6,4,6,0,6,6,6,
+            7,7,7,7,0,7,7,7,7,8,8,4,0,6,8,4,8,3,3,3,0,3,3,3,
+            2,2,2,2,0,2,2,2,2,4,6,4,0,0,6,0,6,3,0,0,0,0,0,3,
+            2,2,0,0,0,0,0,2,2,4,0,0,0,0,0,0,4,3,0,0,0,0,0,3,
+            2,0,0,0,0,0,0,0,2,4,0,0,0,0,0,0,4,3,0,0,0,0,0,3,
+            1,0,0,0,0,0,0,0,1,4,4,4,4,4,6,0,6,3,3,0,0,0,3,3,
+            2,0,0,0,0,0,0,0,2,2,2,1,2,2,2,6,6,0,0,5,0,5,0,5,
+            2,2,0,0,0,0,0,2,2,2,0,0,0,2,2,0,5,0,5,0,0,0,5,5,
+            2,0,0,0,0,0,0,0,2,0,0,0,0,0,2,5,0,5,0,5,0,5,0,5,
+            1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,
+            2,0,0,0,0,0,0,0,2,0,0,0,0,0,2,5,0,5,0,5,0,5,0,5,
+            2,2,0,0,0,0,0,2,2,2,0,0,0,2,2,0,5,0,5,0,0,0,5,5,
+            2,2,2,2,1,2,2,2,2,2,2,1,2,2,2,5,5,5,5,5,5,5,5,5
         };
         private struct Player
         {
@@ -52,8 +55,8 @@ namespace RaycasterWithOpentk
         private Boolean _firstMove = true;
         private Vector2 _lastPos;
         private float _bobAngle = 0.0f;
-        private Texture _floor = new Texture("Resources/greystone.png");
-        
+        private readonly Texture[] _texture = new Texture[8];
+
         public Game(int width, int height, string title)
             : base(width, height, title)
         {
@@ -67,23 +70,31 @@ namespace RaycasterWithOpentk
             UseAlpha = true; //Enables alpha use
             KeyboardAndMouseInput = false; //Enables keyboard and mouse input for 3D movement
             base.OnLoad(e);
+            _xsize = 24;
+            _ysize = 24;
             _player = new Player
             {
-                Pos = new Vector2(500, 500),
+                Pos = new Vector2((10 * (Width / _xsize)) + ((Width / _xsize) / 2), (10 * (Height / _ysize)) + ((Height / _ysize) / 2)),
                 LookDir = new Vector2(0, -1),
                 Right = new Vector2(-1, 0),
                 LookAngle =  3f * (float)Math.PI / 2
             };
-            _xsize = 16;
-            _ysize = 16;
             CursorVisible = false;
+            _texture[0] = new Texture("pics/eagle.png");
+            _texture[1] = new Texture("pics/redbrick.png");
+            _texture[2] = new Texture("pics/purplestone.png");
+            _texture[3] = new Texture("pics/greystone.png");
+            _texture[4] = new Texture("pics/bluestone.png");
+            _texture[5] = new Texture("pics/mossy.png");
+            _texture[6] = new Texture("pics/wood.png");
+            _texture[7] = new Texture("pics/colorstone.png");
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             Clear();
             
-            RenderFloor(_player, _floor);
+            RenderFloor(_player);
             RayCast(_player);
             base.OnRenderFrame(e);
 
@@ -165,7 +176,10 @@ namespace RaycasterWithOpentk
         protected override void OnUnload(EventArgs e)
         {
             base.OnUnload(e);
-            GL.DeleteTexture(_floor.Handle);
+            foreach (var tex in _texture)
+            {
+                GL.DeleteTexture(tex.Handle);
+            }
 
         }
 
@@ -211,41 +225,11 @@ namespace RaycasterWithOpentk
             }
         }
         
-        private void RenderGameBoard(int[] gameBoard)
-        {
-            var xoff = Width / _xsize;
-            var yoff = Height / _ysize;
-            
-            for (var y = 0; y < _ysize; y++)
-            {
-                for (var x = 0; x < _xsize; x++)
-                {
-                    var state = gameBoard[y * _ysize + x];
-                    Color4 col = new Color4(0.2f, 0.2f, 0.2f, 1.0f);
-                    switch (state)
-                    {
-                        case 1:
-                            col = new Color4(1.0f, 1.0f, 1.0f, 1.0f);
-                            break;
-                    }
-                    
-                    drawRectangle(x * xoff + 1, y * yoff + 1, (x + 1) * xoff - 1, (y + 1) * yoff - 1, col);
-                }
-            }
-        }
-
-        private void RenderPlayer(Player player)
-        {
-            drawEllipse(player.Pos.X, player.Pos.Y, 10,10, new Color4(0f,0f,1f,1f));
-            drawLine(player.Pos.X, player.Pos.Y ,player.Pos.X + (player.LookDir.X * 25), player.Pos.Y + (player.LookDir.Y * 25), new Color4(1f, 0f,0f,1f));
-        }
-        
         private void RayCast(Player player)
         {
             int r;
             float ra, distT = 0f;
             Color4 col = new Color4(0f, 0f, 0f,1f);
-            Texture texture = new Texture("Resources/wall.png");
 
             int numRays = Width;
             List<float> angles = new List<float>();
@@ -258,41 +242,27 @@ namespace RaycasterWithOpentk
                 angles.Add(xAng);
             }
 
-            float fov = angles[^1] - angles[0];
-            if (fov > Math.PI * 2) { fov -= (float) Math.PI * 2; }
-            if (fov < 0) { fov += (float) Math.PI * 2; }
-
-            float size = (float) Math.Tan(fov / 2) * 2;
-            
-            player.Right.Normalize();
-            player.Right *= size;
-            _planeX = player.Right.X;
-            _planeY = player.Right.Y;
-            player.Right.Normalize();
-
-            float bobOffset = (float) Math.Sin(_bobAngle) * 10f;
+            var bobOffset = (float) Math.Sin(_bobAngle) * 10f;
             for (r = 0; r < numRays; r++)
             {
                 ra = angles[r];
+
+                int textureHandle=1;
                 
-                var tx = CastRay(player, ra, ref distT, ref col);
+                var tx = CastRay(player, ra, ref distT, ref col, ref textureHandle);
 
                 float ca = player.LookAngle - ra; if (ca > Math.PI * 2) { ca -= (float)Math.PI * 2; } if (ca < 0) { ca += (float)Math.PI * 2; }
-                
                 
                 
                 distT = distT * (float)Math.Cos(ca);
                 float lineH = ((Height / _ysize) * Height) / distT;
                 float lineO = (Height - lineH) / 2;
-                drawTexturedLine(r, lineO,tx,0, r, lineH + lineO,tx,1, texture, col);
+                drawTexturedLine(r, lineO + bobOffset,tx,0, r, lineH + lineO + bobOffset,tx,1, _texture[textureHandle - 1], col);
             }
-            
-            GL.DeleteTexture(texture.Handle);
-            
         }
-        private float CastRay(Player player, float ra, ref float distT, ref Color4 col)
+        private float CastRay(Player player, float ra, ref float distT, ref Color4 col, ref int texture)
         {
-            int mx, my, mp;
+            int mx, my, mp, t1=0, t2=0;
             float rx, ry, xo, yo;
             var dof = 0;
         
@@ -321,19 +291,22 @@ namespace RaycasterWithOpentk
                 xo = 0;
                 dof = 8;
             }
-            while (dof < 16)
+            while (dof < _ysize)
             {
                 mx = (int) rx / (Width / _xsize);
                 my = (int) ry / (Height / _ysize);
                 mp = my * _xsize + mx;
                 if (mp < _gameBoard.Length - 1 && mp > 0)
                 {
-                    if (_gameBoard[mp] == 1 || _gameBoard[mp - _xsize] == 1)
+                    if (_gameBoard[mp] != 0 || _gameBoard[mp - _xsize] != 0)
                     {
                         var temp = new Vector2(rx - player.Pos.X, ry - player.Pos.Y);
                         distH = temp.Length;
                         hx = rx;
                         hy = ry;
+                        t1 = _gameBoard[mp];
+                        if (t1 == 0) { t1 = _gameBoard[mp - _xsize];}
+                        
                         break;
                     }
                 }
@@ -369,19 +342,21 @@ namespace RaycasterWithOpentk
                 xo = 0;
                 dof = 8;
             }
-            while (dof < 16)
+            while (dof < _xsize)
             {
                 mx = (int) rx / (Width / _xsize);
                 my = (int) ry / (Height / _ysize);
                 mp = my * _xsize + mx;
                 if (mp < _gameBoard.Length - 1 && mp > 0)
                 {
-                    if (_gameBoard[mp] == 1 || _gameBoard[mp - 1] == 1)
+                    if (_gameBoard[mp] != 0 || _gameBoard[mp - 1] != 0)
                     {
                         var temp = new Vector2(rx - player.Pos.X, ry - player.Pos.Y);
                         distV = temp.Length;
                         vx = rx;
                         vy = ry;
+                        t2 = _gameBoard[mp];
+                        if (t2 == 0) { t2 = _gameBoard[mp - 1];}
                         break;
                     }
                     
@@ -401,7 +376,7 @@ namespace RaycasterWithOpentk
                 distT = distV;
                 col = new Color4(1f, 1f, 1f, 1f);
                 tx = (ry / (Height / _ysize)) - (float) Math.Floor(ry / (Height / _ysize));
-
+                texture = t2;
             }
             else
             {
@@ -410,18 +385,20 @@ namespace RaycasterWithOpentk
                 distT = distH;
                 col = new Color4(0.5f, 0.5f, 0.5f, 1f);
                 tx = (rx / (Width / _xsize)) - (float) Math.Floor(rx / (Width / _xsize));
+                texture = t1;
             }
             
             return tx; 
             //drawLine(player.Pos.X, player.Pos.Y, rx, ry, new Color4(0f, 0.3f, 0.7f, 0.5f));
         }
 
-        private void RenderFloor(Player player, Texture texture)
+        private void RenderFloor(Player player)
         {
-            float planeX = player.Right.X, planeY = player.Right.Y; //the 2d raycaster version of camera plane
+            float scale = ((Width / 1000f) + (Height / 1000f)) / 2;
+            float planeX = player.Right.X * scale, planeY = player.Right.Y * scale; //the 2d raycaster version of camera plane
             float dirX = player.LookDir.X, dirY = player.LookDir.Y; //initial direction vector
 
-            for(int y = Height/2; y < Height; y++)
+            for(int y = Height / 2; y < Height + 10f; y++)
             {
               // rayDir for leftmost ray (x = 0) and rightmost ray (x = w)
               float rayDirX0 = dirX + planeX;
@@ -458,9 +435,16 @@ namespace RaycasterWithOpentk
               
               float tx2 = ((int) (64 * ((floorX + (floorStepX * Width)) - cellX))) / 64f;
               float ty2 = ((int) (64 * ((floorY + (floorStepY * Height)) - cellY))) / 64f;
+
+              Texture ceiling = _texture[6];
+              Texture floor = _texture[3];
               
-              drawTexturedLine(0, y, tx1, ty1, Width, y, tx2, ty2, texture, new Color4(1f, 1f, 1f, 1f));
+              var bobOffset = (float) Math.Sin(_bobAngle) * 10f;
+
               
+              drawTexturedLine(0, y + bobOffset, tx1, ty1, Width, y + bobOffset, tx2, ty2, floor, new Color4(0.4f, 0.4f, 0.4f, 1f));
+              drawTexturedLine(0, Height - y - 1 + bobOffset, tx1, ty1, Width, Height - y - 1 + bobOffset, tx2, ty2, ceiling, new Color4(0.4f, 0.4f, 0.4f, 1f));
+   
               
             }
         }
