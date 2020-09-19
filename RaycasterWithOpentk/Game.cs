@@ -2,7 +2,9 @@
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.ES11;
+using OpenTK.Input;
 using Program;
+using Boolean = System.Boolean;
 
 namespace RaycasterWithOpentk
 {
@@ -25,9 +27,14 @@ namespace RaycasterWithOpentk
         {
             public Vector2 Pos;
             public Vector2 LookDir;
+            public Vector2 Right;
+            public float LookAngle;
+
         };
 
         private Player _player;
+        private Boolean _firstMove = true;
+        private Vector2 _lastPos;
         
         public Game(int width, int height, string title)
             : base(width, height, title)
@@ -45,10 +52,13 @@ namespace RaycasterWithOpentk
             _player = new Player
             {
                 Pos = new Vector2(500, 500),
-                LookDir = new Vector2(0, 1)
+                LookDir = new Vector2(0, 1),
+                Right = new Vector2(1, 0),
+                LookAngle = (float) Math.PI / 2
             };
             _xsize = 8;
             _ysize = 8;
+            CursorVisible = false;
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -62,6 +72,55 @@ namespace RaycasterWithOpentk
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
+            var input = Keyboard.GetState();
+            const float playerSpeed = 100f;
+            const float sensitivity = 0.01f;
+                if (input.IsKeyDown(Key.W))
+                {
+                    _player.Pos += _player.LookDir * playerSpeed * (float) e.Time; // Forward
+                }
+
+                if (input.IsKeyDown(Key.S))
+                {
+                    _player.Pos -= _player.LookDir * playerSpeed * (float) e.Time; // Forward
+                }
+
+                if (input.IsKeyDown(Key.A))
+                {
+                    _player.Pos -= _player.Right * playerSpeed * (float) e.Time; // Left
+                }
+
+                if (input.IsKeyDown(Key.D))
+                {
+                    _player.Pos += _player.Right * playerSpeed * (float) e.Time; // Left
+                }
+
+                // Get the mouse state
+                var mouse = Mouse.GetState();
+
+                if (_firstMove) // this bool variable is initially set to true
+                {
+                    _lastPos = new Vector2(mouse.X, mouse.Y);
+                    _firstMove = false;
+                }
+                else
+                {
+                    // Calculate the offset of the mouse position
+                    var deltaX = mouse.X - _lastPos.X;
+                    _lastPos = new Vector2(mouse.X, mouse.Y);
+
+                    // Apply the camera pitch and yaw (we clamp the pitch in the camera class)
+                    _player.LookAngle -= deltaX * sensitivity;
+
+                    if (_player.LookAngle > (float) Math.PI * 2) { _player.LookAngle -= (float) Math.PI * 2; }
+                    if (_player.LookAngle < 0) { _player.LookAngle += (float) Math.PI * 2; }
+                    
+                    _player.LookDir = new Vector2((float) Math.Cos(_player.LookAngle), (float) Math.Sin(_player.LookAngle));
+                    _player.Right = new Vector2((float) Math.Sin(_player.LookAngle), (float) -Math.Cos(_player.LookAngle));
+                }
+
+                Mouse.SetPosition(1920 / 2, 1080 / 2);
+
             base.OnUpdateFrame(e);
         }
 
@@ -91,7 +150,7 @@ namespace RaycasterWithOpentk
         private void RenderPlayer(Player player)
         {
             drawEllipse(player.Pos.X, player.Pos.Y, 10,10, new Color4(0f,0f,1f,1f));
-            drawLine(player.Pos.X, player.Pos.Y,player.Pos.X + (player.LookDir.X * 25), player.Pos.Y - (player.LookDir.Y * 25), new Color4(1f, 0f,0f,1f));
+            drawLine(player.Pos.X, -(player.Pos.Y - Height),player.Pos.X + (player.LookDir.X * 25), -(player.Pos.Y - Height) - (player.LookDir.Y * 25), new Color4(1f, 0f,0f,1f));
         }
     }
 }
