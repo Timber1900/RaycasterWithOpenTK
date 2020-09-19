@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.ES11;
@@ -12,8 +13,6 @@ namespace RaycasterWithOpentk
     public class Game : MainRenderWindow
     {
         private int _xsize, _ysize;
-        private float _planeX;
-        private float _planeY;
 
         private readonly int[] _gameBoard =
         {
@@ -48,13 +47,12 @@ namespace RaycasterWithOpentk
             public Vector2 LookDir;
             public Vector2 Right;
             public float LookAngle;
-
         };
 
         private Player _player;
         private Boolean _firstMove = true;
         private Vector2 _lastPos;
-        private float _bobAngle = 0.0f;
+        private float _bobAngle;
         private readonly Texture[] _texture = new Texture[8];
 
         public Game(int width, int height, string title)
@@ -77,7 +75,7 @@ namespace RaycasterWithOpentk
                 Pos = new Vector2((10 * (Width / _xsize)) + ((Width / _xsize) / 2), (10 * (Height / _ysize)) + ((Height / _ysize) / 2)),
                 LookDir = new Vector2(0, -1),
                 Right = new Vector2(-1, 0),
-                LookAngle =  3f * (float)Math.PI / 2
+                LookAngle =  3f * (float)Math.PI / 2,
             };
             CursorVisible = false;
             _texture[0] = new Texture("pics/eagle.png");
@@ -260,6 +258,11 @@ namespace RaycasterWithOpentk
                 drawTexturedLine(r, lineO + bobOffset,tx,0, r, lineH + lineO + bobOffset,tx,1, _texture[textureHandle - 1], col);
             }
         }
+
+       
+
+
+        [SuppressMessage("ReSharper", "RedundantAssignment")]
         private float CastRay(Player player, float ra, ref float distT, ref Color4 col, ref int texture)
         {
             int mx, my, mp, t1=0, t2=0;
@@ -267,7 +270,7 @@ namespace RaycasterWithOpentk
             var dof = 0;
         
             distT = 0;
-            float distH = 1000000f, hx = player.Pos.X, hy = player.Pos.Y;
+            float distH = 1000000f, hx = player.Pos.X;
             float aTan = -1 / (float) Math.Tan(ra);
             if (ra > Math.PI)
             {
@@ -303,7 +306,6 @@ namespace RaycasterWithOpentk
                         var temp = new Vector2(rx - player.Pos.X, ry - player.Pos.Y);
                         distH = temp.Length;
                         hx = rx;
-                        hy = ry;
                         t1 = _gameBoard[mp];
                         if (t1 == 0) { t1 = _gameBoard[mp - _xsize];}
                         
@@ -318,7 +320,7 @@ namespace RaycasterWithOpentk
             }
             
             dof = 0;
-            float distV = 1000000f, vx = player.Pos.X, vy = player.Pos.Y;
+            float distV = 1000000f, vy = player.Pos.Y;
             float nTan = -(float)Math.Tan(ra);
             if (ra > Math.PI / 2 && ra < (Math.PI * 3) / 2)
             {
@@ -353,7 +355,6 @@ namespace RaycasterWithOpentk
                     {
                         var temp = new Vector2(rx - player.Pos.X, ry - player.Pos.Y);
                         distV = temp.Length;
-                        vx = rx;
                         vy = ry;
                         t2 = _gameBoard[mp];
                         if (t2 == 0) { t2 = _gameBoard[mp - 1];}
@@ -371,7 +372,6 @@ namespace RaycasterWithOpentk
             float tx;
             if(distV<=distH)
             {
-                rx = vx;
                 ry = vy;
                 distT = distV;
                 col = new Color4(1f, 1f, 1f, 1f);
@@ -381,7 +381,6 @@ namespace RaycasterWithOpentk
             else
             {
                 rx = hx;
-                ry = hy;
                 distT = distH;
                 col = new Color4(0.5f, 0.5f, 0.5f, 1f);
                 tx = (rx / (Width / _xsize)) - (float) Math.Floor(rx / (Width / _xsize));
@@ -389,7 +388,6 @@ namespace RaycasterWithOpentk
             }
             
             return tx; 
-            //drawLine(player.Pos.X, player.Pos.Y, rx, ry, new Color4(0f, 0.3f, 0.7f, 0.5f));
         }
 
         private void RenderFloor(Player player)
@@ -407,7 +405,7 @@ namespace RaycasterWithOpentk
               float rayDirY1 = dirY - planeY;
 
               // Current y position compared to the center of the screen (the horizon)
-              int p = y - Height / 2;
+              int p = y - (Height / 2);
 
               // Vertical position of the camera.
               float posZ = 0.5f * Height;
