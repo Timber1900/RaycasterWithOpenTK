@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using OpenTK;
 using OpenTK.Graphics;
-using OpenTK.Graphics.ES11;
+using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 using Program;
 using Boolean = System.Boolean;
@@ -53,7 +53,7 @@ namespace RaycasterWithOpentk
         private Boolean _firstMove = true;
         private Vector2 _lastPos;
         private float _bobAngle;
-        private readonly Texture[] _texture = new Texture[8];
+        private readonly Texture[] _texture = new Texture[9];
 
         public Game(int width, int height, string title)
             : base(width, height, title)
@@ -78,14 +78,15 @@ namespace RaycasterWithOpentk
                 LookAngle =  3f * (float)Math.PI / 2,
             };
             CursorVisible = false;
-            _texture[0] = new Texture("pics/eagle.png");
-            _texture[1] = new Texture("pics/redbrick.png");
-            _texture[2] = new Texture("pics/purplestone.png");
-            _texture[3] = new Texture("pics/greystone.png");
-            _texture[4] = new Texture("pics/bluestone.png");
-            _texture[5] = new Texture("pics/mossy.png");
-            _texture[6] = new Texture("pics/wood.png");
-            _texture[7] = new Texture("pics/colorstone.png");
+            _texture[0] = new Texture("pics/eagle.png", TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+            _texture[1] = new Texture("pics/redbrick.png", TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+            _texture[2] = new Texture("pics/purplestone.png", TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+            _texture[3] = new Texture("pics/greystone.png", TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+            _texture[4] = new Texture("pics/bluestone.png", TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+            _texture[5] = new Texture("pics/mossy.png", TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+            _texture[6] = new Texture("pics/wood.png", TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+            _texture[7] = new Texture("pics/colorstone.png", TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+            _texture[8] = new Texture("pics/greystone.png", TextureMinFilter.Linear, TextureMagFilter.Linear);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -392,10 +393,12 @@ namespace RaycasterWithOpentk
 
         private void RenderFloor(Player player)
         {
-            float scale = ((Width / 1000f) + (Height / 1000f)) / 2;
+            float scale = Math.Max(Width / 1000f, Height / 1000f);
             float planeX = player.Right.X * scale, planeY = player.Right.Y * scale; //the 2d raycaster version of camera plane
             float dirX = player.LookDir.X, dirY = player.LookDir.Y; //initial direction vector
 
+            int size = Math.Min(Height, Width);
+            
             for(int y = Height / 2; y < Height + 10f; y++)
             {
               // rayDir for leftmost ray (x = 0) and rightmost ray (x = w)
@@ -416,12 +419,12 @@ namespace RaycasterWithOpentk
 
               // calculate the real world step vector we have to add for each x (parallel to camera plane)
               // adding step by step avoids multiplications with a weight in the inner loop
-              float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / Width;
-              float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / Height;
+              float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / size;
+              float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / size;
 
               // real world coordinates of the leftmost column. This will be updated as we step to the right.
-              float floorX = (player.Pos.X / (Width / _xsize)) + rowDistance * rayDirX0;
-              float floorY = (player.Pos.Y / (Height / _ysize)) + rowDistance * rayDirY0;
+              float floorX = (player.Pos.X / (size / _xsize)) + rowDistance * rayDirX0;
+              float floorY = (player.Pos.Y / (size / _ysize)) + rowDistance * rayDirY0;
 
               
               int cellX = (int)(floorX);
@@ -431,17 +434,17 @@ namespace RaycasterWithOpentk
               float tx1 = ((int) (64 * (floorX - cellX))) / 64f;
               float ty1 = ((int) (64 * (floorY - cellY))) / 64f;
               
-              float tx2 = ((int) (64 * ((floorX + (floorStepX * Width)) - cellX))) / 64f;
-              float ty2 = ((int) (64 * ((floorY + (floorStepY * Height)) - cellY))) / 64f;
+              float tx2 = ((int) (64 * ((floorX + (floorStepX * size)) - cellX))) / 64f;
+              float ty2 = ((int) (64 * ((floorY + (floorStepY * size)) - cellY))) / 64f;
 
               Texture ceiling = _texture[6];
-              Texture floor = _texture[3];
+              Texture floor = _texture[8];
               
               var bobOffset = (float) Math.Sin(_bobAngle) * 10f;
 
               
               drawTexturedLine(0, y + bobOffset, tx1, ty1, Width, y + bobOffset, tx2, ty2, floor, new Color4(0.4f, 0.4f, 0.4f, 1f));
-              drawTexturedLine(0, Height - y - 1 + bobOffset, tx1, ty1, Width, Height - y - 1 + bobOffset, tx2, ty2, ceiling, new Color4(0.4f, 0.4f, 0.4f, 1f));
+              drawTexturedLine(0, Height - y - 1 + bobOffset, tx1, ty1, Width, Height - y - 1 + bobOffset, tx2, ty2, ceiling, new Color4(0.0f, 0.3f, 0.7f, 1f));
    
               
             }
