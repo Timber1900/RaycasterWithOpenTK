@@ -1,0 +1,4 @@
+C:\Users\35196\RiderProjects\RaycasterWithOpentk\RaycasterWithOpentk\obj\Debug\netcoreapp2.1\RaycasterWithOpentk.csprojAssemblyReference.cache
+C:\Users\35196\RiderProjects\RaycasterWithOpentk\RaycasterWithOpentk\obj\Debug\netcoreapp2.1\RaycasterWithOpentk.AssemblyInfoInputs.cache
+C:\Users\35196\RiderProjects\RaycasterWithOpentk\RaycasterWithOpentk\obj\Debug\netcoreapp2.1\RaycasterWithOpentk.AssemblyInfo.cs
+C:\Users\35196\RiderProjects\RaycasterWithOpentk\RaycasterWithOpentk\obj\Debug\netcoreapp2.1\RaycasterWithOpentk.csproj.CoreCompileInputs.cache
